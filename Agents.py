@@ -41,10 +41,10 @@ class AlphaBetaAgent:
 
     def compute_action(self, state):
         self.expanded = 0
-        score, tiebreak, action = self.alphabeta(state, alpha=self.evalFn.min, beta=self.evalFn.max)
+        score, tiebreak, action = self.alphabeta(state)
         return action
 
-    def alphabeta(self, state, alpha, beta, depth=0, action=None):
+    def alphabeta(self, state, alpha=float('-inf'), beta=float('inf'), depth=0, action=None):
         self.expanded += 1
         actions = state.legal_actions[1:] # discard skip
         if not actions or depth == self.depth:
