@@ -7,7 +7,7 @@ import re
 def str_to_board(string):
     match = re.compile(r'((?:\.|r|y){7},?){6}').match(string)
     if not match or match.group() != string:
-        raise ArgumentTypeError(f'Invalid board: {string}')
+        raise ArgumentTypeError('Invalid board: {}'.format(string))
     return string
 
 def parse_args():

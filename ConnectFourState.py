@@ -17,8 +17,8 @@ class ConnectFour:
     def from_string(cls, turn, state):
         state = np.array(mat.asmatrix(
             state.replace(',', ' ;')
-                 .replace('r', f" {ConnectFour.player('r')},")
-                 .replace('y', f" {ConnectFour.player('y')},")
+                 .replace('r', ' {},'.format(ConnectFour.player('r')))
+                 .replace('y', ' {},'.format(ConnectFour.player('y')))
                  .replace('.', ' 0,'),
             dtype=int
         ))

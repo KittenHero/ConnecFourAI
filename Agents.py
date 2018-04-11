@@ -6,18 +6,8 @@ class MinimaxAgent:
 
     def compute_action(self, state):
         self.expanded = 0
-        _, _, action = self.minimax(state)
+        _, action = self.minimax(state)
         return action
-
-    def actions_gen(self, state, actions, depth):
-        yield from [
-            self.minimax(
-                state.successor(action),
-                depth + 1,
-                action
-            )
-            for action in actions
-        ]
 
     def minimax(self, state, depth=0, action=None):
 
@@ -25,13 +15,19 @@ class MinimaxAgent:
         actions = state.legal_actions[1:] # discards skips
 
         if depth == self.depth or not actions:
-            return self.evalFn(state), self.expanded, action
+            return self.evalFn(state), action
 
-        actions = self.actions_gen(state, actions, depth)
+        actions = (
+            self.minimax(
+                state.successor(action),
+                depth + 1,
+                action
+            ) for action in actions
+        )
         if depth % 2:
-            return max(actions)
-        else:
             return min(actions)
+        else:
+            return max(actions, key=lambda k: k[0])
 
 class AlphaBetaAgent:
     def __init__(self, evalFn, depth):
@@ -41,7 +37,7 @@ class AlphaBetaAgent:
 
     def compute_action(self, state):
         self.expanded = 0
-        score, tiebreak, action = self.alphabeta(state)
+        _, _, action = self.alphabeta(state)
         return action
 
     def alphabeta(self, state, alpha=float('-inf'), beta=float('inf'), depth=0, action=None):
