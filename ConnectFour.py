@@ -1,4 +1,7 @@
 from argparse import ArgumentParser, ArgumentTypeError
+from ConnectFourState import ConnectFour
+from Agents import MinimaxAgent, AlphaBetaAgent
+from Functions import DefaultEval
 import re
 
 def str_to_board(string):
@@ -18,4 +21,14 @@ def parse_args():
     return parser.parse_args()
 
 if __name__ == '__main__':
-    print(parse_args())
+    args = parse_args()
+    state = ConnectFour.from_string(args.player, args.state)
+    eval_fn = DefaultEval(args.player)
+    if args.agent == 'A':
+        agent = AlphaBetaAgent(eval_fn, args.depth)
+    elif args.agent == 'M':
+        agent = MinimaxAgent(eval_fn, args.depth)
+    else:
+        raise NotImplemented
+    print(agent.compute_action(state) - 1)
+    print(agent.expanded)

@@ -4,9 +4,9 @@ class MinimaxAgent:
         self.depth = depth
         self.expanded = 0
 
-    def getAction(self, state):
+    def compute_action(self, state):
         self.expanded = 0
-        _, action = self.minimax(state)
+        _, _, action = self.minimax(state)
         return action
 
     def actions_gen(self, state, actions, depth):
@@ -14,19 +14,18 @@ class MinimaxAgent:
             self.minimax(
                 state.successor(action),
                 depth + 1,
-                sequence + [action]
+                action
             )
-            for i, action in enumerate(actions)
+            for action in actions
         ]
 
-
-    def minimax(self, state, depth = 0, action):
+    def minimax(self, state, depth=0, action=None):
 
         self.expanded += 1
         actions = state.legal_actions[1:] # discards skips
 
         if depth == self.depth or not actions:
-            return self.evalFn(state), action
+            return self.evalFn(state), self.expanded, action
 
         actions = self.actions_gen(state, actions, depth)
         if depth % 2:
@@ -38,44 +37,45 @@ class AlphaBetaAgent:
     def __init__(self, evalFn, depth):
         self.evalFn = evalFn
         self.depth = depth
+        self.expanded = 0
 
-    def getAction(self, state):
-        self.actionID = 0
-        _, action = self.abHelper(state)
+    def compute_action(self, state):
+        self.expanded = 0
+        _, _, action = self.abHelper(state, alpha=self.evalFn.min, beta=self.evalFn.max)
         return action
         
-    def abHelper(self, state, depth = 0, action, alpha=None, beta=None):
+    def abHelper(self, state, depth=0, action=None, alpha=None, beta=None):
+        self.expanded += 1
         actions = state.legal_actions[1:] # discards skips
         if depth == self.depth or not actions:
-            return self.evalFn(state), action
-        else if depth % 2:
-            return min(self.beta(self, state, depth, actions, alpha, beta))
+            return self.evalFn(state), self.expanded, action
+        elif depth % 2:
+            return min(self.beta(state, depth, actions, alpha, beta))
         else:
-            return max(self.alpha(self, state, depth, actions, alpha, beta))
+            return max(self.alpha(state, depth, actions, alpha, beta))
 
     def alpha(self, state, depth, actions, alpha, beta):
-        for action in self.actions_gen:
-            score, action = self.abHelper(
+        for action in actions:
+            score, _, action = self.abHelper(
                 state.successor(action),
                 depth + 1, action,
                 alpha, beta
             )
-            yield score, action
+            yield score, self.expanded, action
             if alpha == None or score > alpha:
                 alpha = score
-                if beta != None and alpha >= beta
+                if beta != None and alpha >= beta:
                     break
 
     def beta(self, state, depth, actions, alpha, beta):
         for action in actions:
-            score, action = self.abHelper(
+            score, _, action = self.abHelper(
                 state.successor(action),
                 depth + 1, action,
                 alpha, beta
             )
-            yield score, action
-            if alpha == None or score > alpha:
-                alpha = score
-                if beta != None and alpha >= beta
+            yield score, self.expanded, action
+            if beta == None or beta < score:
+                beta = score
+                if alpha != None and alpha >= beta:
                     break
-
