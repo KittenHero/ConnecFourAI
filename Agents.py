@@ -48,8 +48,6 @@ class AlphaBetaAgent:
         self.expanded += 1
         actions = state.legal_actions[1:] # discard skip
         if not actions or depth == self.depth:
-            if state.game_over:
-                print(state.winner)
             return self.evalFn(state), self.expanded, action
         elif depth % 2:
             return min(self.beta(state, alpha, beta, depth, actions))

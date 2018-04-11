@@ -59,8 +59,8 @@ class ConnectFour:
         row_summer = np.triu(np.tril(np.ones((self.width, self.width), dtype=int)), 1 - n)
         col_summer = np.tril(np.triu(np.ones((self.height, self.height), dtype=int)), n - 1)
 
-        hori = np.count_nonzero((self.state @ row_summer)[:1-n, :] == score)
-        vert = np.count_nonzero((col_summer @ self.state)[:, :1-n] == score)
+        hori = np.count_nonzero((self.state @ row_summer)[:, :1-n] == score)
+        vert = np.count_nonzero((col_summer @ self.state)[:1-n, :] == score)
 
         mdiag, mshift, odiag, oshift = [np.copy(self.state) for _ in range(4)]
         up_shift = np.eye(self.height, k=1, dtype=int)
@@ -71,7 +71,6 @@ class ConnectFour:
             oshift = up_shift @ oshift @ left_shift.T
             mdiag += mshift
             odiag += oshift
-
 
         mdiag = np.count_nonzero(mdiag[:1-n, :1-n] == score)
         odiag = np.count_nonzero(odiag[:1-n, n:] == score)
