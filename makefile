@@ -35,9 +35,11 @@ $(TESTSUBDIRS):
 .SECONDEXPANSION:
 
 $(TESTPATH)%.out: %.in %.exp $(MAIN) FORCE | $$(dir $$@)
+	@cat $<
 	@xargs python $(MAIN) < $< | tee $@ | diff $(word 2, $^) -
 	@echo passed $(basename $(notdir $@))
 
 $(TESTPATH)%.out: %.in $(MAIN) FORCE | $$(dir $$@)
+	@cat $<
 	@xargs python $(MAIN) < $< > $@
 	@echo no errors $(basename $(notdir $@))

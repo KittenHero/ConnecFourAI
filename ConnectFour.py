@@ -30,5 +30,5 @@ if __name__ == '__main__':
         agent = MinimaxAgent(eval_fn, args.depth)
     else:
         raise NotImplemented
-    print(agent.compute_action(state) - 1)
+    print(agent.compute_action(state))
     print(agent.expanded)

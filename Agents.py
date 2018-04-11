@@ -41,41 +41,41 @@ class AlphaBetaAgent:
 
     def compute_action(self, state):
         self.expanded = 0
-        _, _, action = self.abHelper(state, alpha=self.evalFn.min, beta=self.evalFn.max)
+        score, tiebreak, action = self.alphabeta(state, alpha=self.evalFn.min, beta=self.evalFn.max)
         return action
-        
-    def abHelper(self, state, depth=0, action=None, alpha=None, beta=None):
+
+    def alphabeta(self, state, alpha, beta, depth=0, action=None):
         self.expanded += 1
-        actions = state.legal_actions[1:] # discards skips
-        if depth == self.depth or not actions:
+        actions = state.legal_actions[1:] # discard skip
+        if not actions or depth == self.depth:
+            if state.game_over:
+                print(state.winner)
             return self.evalFn(state), self.expanded, action
         elif depth % 2:
-            return min(self.beta(state, depth, actions, alpha, beta))
+            return min(self.beta(state, alpha, beta, depth, actions))
         else:
-            return max(self.alpha(state, depth, actions, alpha, beta))
+            return max(self.alpha(state, alpha, beta, depth, actions))
 
-    def alpha(self, state, depth, actions, alpha, beta):
+    def beta(self, state, alpha, beta, depth, actions):
         for action in actions:
-            score, _, action = self.abHelper(
+            score, _, _ = self.alphabeta(
                 state.successor(action),
-                depth + 1, action,
-                alpha, beta
+                alpha, beta, depth + 1,
+                action
             )
-            yield score, self.expanded, action
-            if alpha == None or score > alpha:
-                alpha = score
-                if beta != None and alpha >= beta:
-                    break
+            yield score, action, action
+            beta = min(beta, score)
+            if beta <= alpha:
+                break
 
-    def beta(self, state, depth, actions, alpha, beta):
+    def alpha(self, state, alpha, beta, depth, actions):
         for action in actions:
-            score, _, action = self.abHelper(
+            score, _, _ = self.alphabeta(
                 state.successor(action),
-                depth + 1, action,
-                alpha, beta
+                alpha, beta, depth + 1,
+                action
             )
-            yield score, self.expanded, action
-            if beta == None or beta < score:
-                beta = score
-                if alpha != None and alpha >= beta:
-                    break
+            yield score, state.width - action, action
+            alpha = max(alpha, score)
+            if beta <= alpha:
+                break

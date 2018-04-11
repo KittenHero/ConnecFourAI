@@ -6,7 +6,7 @@ class ConnectFour:
     height = 6
 
     def __init__(self, turn, state=None):
-        if type(state) != type(None):
+        if state is not None:
             self.state = state
         else:
             self.state = np.zeros((self.width, self.height), dtype=int)
@@ -36,9 +36,9 @@ class ConnectFour:
     @property
     def legal_actions(self):
         if self.game_over:
-            return [0]
+            return [None]
         else:
-            return [0] + [i for i, cell in enumerate(self.state[-1], 1) if not cell]
+            return [None] + [i for i, cell in enumerate(self.state[-1]) if not cell]
     
     @property
     def game_over(self):
@@ -79,8 +79,8 @@ class ConnectFour:
         return hori + vert + mdiag + odiag
         
     def successor(self, action):
-        if action:
-            col = action - 1
+        if action is not None:
+            col = action
             row = min(np.nonzero(self.state[:, col] == 0)[0])
             state = np.copy(self.state)
             state[row, col] = self.turn
