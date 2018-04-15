@@ -1,5 +1,5 @@
 from argparse import ArgumentParser, ArgumentTypeError
-from ConnectFourState import ConnectFour
+from ConnectFourState import ConnectFourBit
 from Agents import MinimaxAgent, AlphaBetaAgent
 from Functions import DefaultEval
 import re
@@ -22,7 +22,7 @@ def parse_args():
 
 if __name__ == '__main__':
 	args = parse_args()
-	state = ConnectFour.from_string(args.player, args.state)
+	state = ConnectFourBit.from_string(args.player, args.state)
 	eval_fn = DefaultEval(args.player)
 	if args.agent == 'A':
 		agent = AlphaBetaAgent(eval_fn, args.depth)
