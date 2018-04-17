@@ -2,10 +2,11 @@ from functools import reduce, partial
 from itertools import chain
 
 class ConnectFourBit:
-	width = 7
+	width  = 7
 	height = 6
-	rmask = 0b01010101010101
-	ymask = 0b10101010101010
+	rmask      = 0b01010101010101
+	ymask      = 0b10101010101010
+	first_cell = 0b11000000000000
 	
 	def __init__(self, turn, state=None):
 		if state is not None:
@@ -41,9 +42,9 @@ class ConnectFourBit:
 	@property
 	def legal_actions(self):
 		if self.game_over:
-			return [None]
+			return ['']
 		else:
-			return [None] + [i for i in range(self.width) if not self.state[-1] & (0b11 << 2*(self.width - 1 - i))]
+			return [''] + [i for i in range(self.width) if not self.state[-1] & (self.first_cell >> 2*i)]
 	
 	@property
 	def game_over(self):
@@ -61,8 +62,8 @@ class ConnectFourBit:
 	def successor(self, action):
 		state = self.state[:]
 		turn = (self.turn << 1) | (self.turn >> self.width * 2 - 1)
-		if action is not None:
-			mask = (0b11 << 2*(self.width - 1 - action))
+		if action != '':
+			mask = self.first_cell >> 2*action
 			row = next(y for y in range(self.height) if not self.state[y] & mask)
 			state[row] = state[row] | (mask & self.turn)
 		return self.__class__(turn, state)
@@ -96,3 +97,6 @@ class ConnectFourBit:
 		x = (x & 0x3333) + ((x >> 2) & 0x3333)
 		x = (x + (x >> 4)) & 0x0f0f
 		return (x + (x >> 8)) & 0xff
+	
+	def __repr__(self):
+		return '\n'.join(map('{:014b}'.format, self.state))

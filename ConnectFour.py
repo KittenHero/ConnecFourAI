@@ -15,8 +15,8 @@ def parse_args():
 	parser.add_argument('state', help='Current board state', type=str_to_board)
 	parser.add_argument('player', help='Current player', choices=['red', 'yellow'])
 	agent_args = parser.add_argument_group('Agent options')
-	agent_args.add_argument('agent', help='Agent to use', choices=['A', 'M'], nargs='?')
-	agent_args.add_argument('depth', help='Agent search depth', type=int, nargs='?')
+	agent_args.add_argument('agent', help='Agent to use', choices=['A', 'M'], nargs='?', default='A')
+	agent_args.add_argument('depth', help='Agent search depth', nargs='?', type=int, default=6)
 	agent_args.add_argument('--score', help='Shows the max score value', action='store_true')
 	return parser.parse_args()
 
