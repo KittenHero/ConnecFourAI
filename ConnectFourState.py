@@ -1,50 +1,59 @@
-from functools import reduce, partial
-from itertools import chain
-
 class ConnectFourBit:
 	width  = 7
 	height = 6
-	rmask      = 0b01010101010101
-	ymask      = 0b10101010101010
-	first_cell = 0b11000000000000
 	
 	def __init__(self, turn, state=None):
 		if state is not None:
 			self.state = state
 		else:
-			self.state = [0]*6
-		
+			self.state = (0, 0)
+		self.occupied = self.state[0] | self.state[1]
 		self.turn = turn
-		self.consecs = [None]*4
 		self.winner = None
+		self.consecs = ([None]*4, [None]*4)
 
 	@classmethod
 	def player(cls, player):
 		if player.startswith('r'):
-			return cls.rmask
+			return 0
 		elif player.startswith('y'):
-			return cls.ymask
+			return 1
 		else:
-			assert 0b00, 'Invalid player'
+			assert 0, 'Invalid player'
 
 	@classmethod
 	def from_string(cls, turn, state):
-		state = list(map(
-			partial(int, base=2),
-			state
+		interleaved = int(
+			state[::-1]
 				.replace('r', '01')
 				.replace('y', '10')
 				.replace('.', '00')
-				.split(',')
-		))
-		return cls(cls.player(turn), state)
+				.replace(',', '00'),
+			base=2
+		)
+		red    = cls.deinterleave_96(interleaved)
+		yellow = cls.deinterleave_96(interleaved >> 1)
+		return cls(cls.player(turn), (red, yellow))
+	
+	@staticmethod
+	def deinterleave_96(x): # Sean Eron Anderson : bit twiddling hacks
+		x = x & 0x5555_5555_5555_5555_5555_5555
+		x = (x | (x >> 1)) & 0x3333_3333_3333_3333_3333_3333
+		x = (x | (x >> 2)) & 0x0f0f_0f0f_0f0f_0f0f_0f0f_0f0f
+		x = (x | (x >> 4)) & 0x00ff_00ff_00ff_00ff_00ff_00ff
+		x = (x | (x >> 8)) & 0xffff_0000_ffff_0000_ffff
+		x = (x | (x >> 16)) & 0xffff_0000_0000_ffff_ffff
+		return (x | (x >> 32)) & 0xffff_ffff_ffff
 	
 	@property
 	def legal_actions(self):
 		if self.game_over:
-			return ['']
+			return ()
 		else:
-			return [''] + [i for i in range(self.width) if not self.state[-1] & (self.first_cell >> 2*i)]
+			return [
+				i for i in range(self.width)
+				if not 1 & (self.occupied >> 40 + i)
+			]
 	
 	@property
 	def game_over(self):
@@ -57,46 +66,92 @@ class ConnectFourBit:
 			self.winner = 'yellow'
 			return True
 		else:
-			return False
+			return self.width == self.bit_count_8(self.occupied >> 40)
 	
 	def successor(self, action):
-		state = self.state[:]
-		turn = (self.turn << 1) | (self.turn >> self.width * 2 - 1)
+		red, yellow = self.state
+		turn = self.turn ^ 1
 		if action != '':
-			mask = self.first_cell >> 2*action
-			row = next(y for y in range(self.height) if not self.state[y] & mask)
-			state[row] = state[row] | (mask & self.turn)
-		return self.__class__(turn, state)
+			rmask = 1 << action
+			row = next(
+				y for y in range(self.height)
+				if not (self.occupied >> y*8) & rmask
+			)
+			if self.turn & 1:
+				yellow |= rmask << row*8
+			else:
+				red |= rmask << row*8
+		return self.__class__(turn, (red, yellow))
 	
 	def count_consec(self, n, player):
-		if n == 1:
-			self.consecs[0] = self.state
-		elif self.consecs[n-1] is None: 
-			h = [
-				reduce(lambda acc, k: acc & (row >> k), range(0, 2*n, 2), self.rmask | self.ymask)
-				for row in self.state
-			]
-			v, md, od = ([0]*(self.height + 1 - n) for _ in range(3))
-			for i, rows in enumerate(zip(*(self.state[j:] for j in range(n)))):
-				v[i] = reduce(lambda acc, row: acc & row, rows)
-				od[i] = reduce(lambda acc, row: row & (acc >> 2), rows)
-				md[i] = reduce(lambda acc, k: acc & (rows[k] >> 2*k), range(n), self.rmask | self.ymask)
-			
-			self.consecs[n-1] = list(chain(h, v, md, od))
-
-		return sum(map(
-			lambda row: self.bit_count_16(row & player),
-			self.consecs[n-1]
-		))
+		consec = self.consecs[player]
+		if consec[n-1] is None:
+			consec[n-1] = self.b_count_consec(n, self.state[player])
+		return consec[n-1]
+	
+	@classmethod
+	def b_count_consec(cls, n, board):
+		if n == 1: return cls.bit_count_48(board)
+		hz_shift = board & (board >> 1)
+		vt_shift = board & (board >> 8)
+		md_shift = board & (board >> 9)
+		od_shift = board & (board >> 7)
+		if n > 2:
+			if n == 3:
+				hz_shift = board & (hz_shift >> 1)
+				vt_shift = board & (vt_shift >> 8)
+				md_shift = board & (md_shift >> 9)
+				od_shift = board & (od_shift >> 7)
+			else:
+				hz_shift = hz_shift & (hz_shift >> 2)
+				vt_shift = vt_shift & (vt_shift >> 16)
+				md_shift = md_shift & (md_shift >> 18)
+				od_shift = od_shift & (od_shift >> 14)
+				return hz_shift or vt_shift or md_shift or vt_shift
 		
+		return sum(map(
+			cls.bit_count_48,
+			(hz_shift, vt_shift, md_shift, od_shift)
+		))
+	
 	@staticmethod
-	def bit_count_16(x):
+	def bit_count_48(x):
+		if not x: return 0
+		# wikipedia : Hamming weight
+		x -= (x >> 1) & 0x5555_5555_5555
+		x = (x & 0x3333_3333_3333) + ((x >> 2) & 0x3333_3333_3333)
+		x = (x + (x >> 4)) & 0x0f0f_0f0f_0f0f
+		return (x * 0x0101_0101_0101_0101 >> 56) & 0x3f
+	
+	@staticmethod
+	def bit_count_8(x):
 		if not x: return 0
 		
-		x = x - ((x >> 1) & 0x5555)
-		x = (x & 0x3333) + ((x >> 2) & 0x3333)
-		x = (x + (x >> 4)) & 0x0f0f
-		return (x + (x >> 8)) & 0xff
+		x -= (x >> 1) & 0x55
+		x = (x & 0x33) + ((x >> 2) & 0x33)
+		return (x + (x >> 4)) & 0x0f
+	
+	def __hash__(self):
+		return hash(self.state)
+	
+	def __eq__(self, other):
+		return isinstance(other, self.__class__) and other.state == self.state
 	
 	def __repr__(self):
-		return '\n'.join(map('{:014b}'.format, self.state))
+		return 'ConnectFourBit({}, {})'.format(self.turn, self.state)
+	
+	def __str__(self):
+		red, yellow = self.state
+		rows = [0]*self.height
+		for y in range(self.height):
+			r = [0]*self.width
+			for x in range(self.width):
+				r[x] = 'r' if red & 1 else 'y' if yellow & 1 else '.'
+				red >>= 1
+				yellow >>= 1
+			rows[y] = ''.join(r[::-1])
+			red >>= 1
+			yellow >>= 1
+		rows = ' '.join(rows)
+			
+		return 'winner: %s, board: {%s}' % (self.winner, rows)
