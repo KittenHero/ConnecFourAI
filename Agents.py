@@ -10,7 +10,7 @@ class MinimaxAgent:
 
 	def minimax(self, state, depth=0, prev=None):
 		self.expanded += 1
-		actions = state.legal_actions[1:] # discards skips
+		actions = state.legal_actions
 
 		if depth == self.depth or not actions:
 			return self.evalFn(state), prev
@@ -42,7 +42,7 @@ class AlphaBetaAgent:
 
 	def alphabeta(self, state, alpha=float('-inf'), beta=float('inf'), depth=0, prev=None):
 		self.expanded += 1
-		actions = state.legal_actions[1:] # discard skip
+		actions = state.legal_actions
 		if not actions or depth == self.depth:
 			return self.evalFn(state), prev
 		elif depth % 2:
