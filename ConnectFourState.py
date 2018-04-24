@@ -68,6 +68,7 @@ class ConnectFourBit:
 		else:
 			return self.width == self.bit_count_8(self.occupied >> 40)
 	
+	
 	def successor(self, action):
 		red, yellow = self.state
 		turn = self.turn ^ 1
@@ -149,9 +150,9 @@ class ConnectFourBit:
 				r[x] = 'r' if red & 1 else 'y' if yellow & 1 else '.'
 				red >>= 1
 				yellow >>= 1
-			rows[y] = ''.join(r[::-1])
+			rows[y] = ''.join(r)
 			red >>= 1
 			yellow >>= 1
-		rows = ' '.join(rows)
+		rows = ','.join(rows)
 			
-		return 'winner: %s, board: {%s}' % (self.winner, rows)
+		return '%s %s' % (rows, 'yellow' if self.turn else 'red')
